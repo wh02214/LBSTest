@@ -19,7 +19,8 @@
         android:layout_height="match_parent"
         android:clickable="true" />
 
-    <include layout="@layout/main_title" />
 
+
+    <include layout="@layout/main_title" />
 
 </FrameLayout>

@@ -6,12 +6,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
-import android.app.Activity;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.location.Location;
-import android.location.LocationListener;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -21,14 +17,16 @@ import android.widget.Toast;
 
 import com.baidu.location.BDAbstractLocationListener;
 import com.baidu.location.BDLocation;
-import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
 import com.baidu.mapapi.SDKInitializer;
 import com.baidu.mapapi.map.BaiduMap;
+import com.baidu.mapapi.map.BitmapDescriptorFactory;
+import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.model.LatLng;
 
@@ -42,6 +40,8 @@ public class MainActivity extends AppCompatActivity {
     private BaiduMap baiduMap;
     private boolean isFirstLocation = true;
     public ImageButton imageButton;
+    private TextView textView;
+    private TextView textView2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,8 +51,18 @@ public class MainActivity extends AppCompatActivity {
         SDKInitializer.initialize(getApplicationContext());
         setContentView(R.layout.activity_main);
         mapView = (MapView) findViewById(R.id.bmapView);
+        mapView.removeViewAt(1);
         baiduMap = mapView.getMap();
         baiduMap.setMyLocationEnabled(true);
+        //打开交通图
+        //baiduMap.setTrafficEnabled(true);
+        /*
+        开启卫星图
+        baiduMap.setMapType(BaiduMap.MAP_TYPE_SATELLITE);
+         */
+        //打开热力图
+        //baiduMap.setBaiduHeatMapEnabled(true);
+
         //隐藏标题栏
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
@@ -72,11 +82,43 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 isFirstLocation = true;
-                Toast.makeText(MainActivity.this, "正在定位....", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "定位成功", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        //地图点击
+        baiduMap.setOnMapClickListener(new BaiduMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng latLng) {
+            }
+
+            @Override
+            public void onMapPoiClick(MapPoi mapPoi) {
+                textView = (TextView) findViewById(R.id.tv_location);
+                textView2 = (TextView) findViewById(R.id.tv_xyz);
+                String POIName = mapPoi.getName();//POI点名称
+                LatLng POIPosition = mapPoi.getPosition();//POI点坐标
+                //添加图层显示POI点
+                baiduMap.clear();
+                baiduMap.addOverlay(
+                        new MarkerOptions()
+                                .position(POIPosition)                                     //坐标位置
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_marka))
+
+                );
+                //将该POI点设置为地图中心
+                baiduMap.setMapStatus(MapStatusUpdateFactory.newLatLng(POIPosition));
+                //底部显示部分信息
+                textView.setText(POIName);
+                textView2.setText(POIPosition.toString());
             }
         });
 
 
+        //POI
+
+
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         positionText = (TextView) findViewById(R.id.position_text_view);
         List<String> permissionList = new ArrayList<>();
         if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -104,6 +146,9 @@ public class MainActivity extends AppCompatActivity {
             baiduMap.animateMapStatus(update);
             update = MapStatusUpdateFactory.zoomTo(16f);
             baiduMap.animateMapStatus(update);
+            //地图上显示一个中心圆圈
+            //CircleOptions circle = new CircleOptions().center(ll).fillColor(0x80ff0000).radius(500);
+            //baiduMap.addOverlay(circle);
             isFirstLocation = false;
         }
         MyLocationData.Builder locationBuilder = new MyLocationData.Builder();
@@ -111,6 +156,7 @@ public class MainActivity extends AppCompatActivity {
         locationBuilder.longitude(location.getLongitude());
         MyLocationData locationData = locationBuilder.build();
         baiduMap.setMyLocationData(locationData);
+
     }
 
     @Override
@@ -132,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initLocation() {
         LocationClientOption option = new LocationClientOption();
-        option.setScanSpan(5000);
+        option.setScanSpan(1000);
         option.setCoorType("bd09ll");
         option.setLocationMode(LocationClientOption.LocationMode.Hight_Accuracy);
         option.setIsNeedAddress(true);
@@ -146,6 +192,7 @@ public class MainActivity extends AppCompatActivity {
         mLocationClient.stop();
         mapView.onDestroy();
         baiduMap.setMyLocationEnabled(false);
+
     }
 
     @Override
@@ -200,5 +247,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
 
 }
